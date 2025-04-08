@@ -28,7 +28,7 @@ const SectorSelector: React.FC<SectorSelectorProps> = ({
 }) => {
   const [open, setOpen] = React.useState(false);
   
-  // Make sure we have valid sector data
+  // Make sure we have valid sector data and it's never undefined
   const sectors = Array.isArray(sectorData) ? sectorData : [];
   
   // Ensure we have a valid selected sector
@@ -55,7 +55,7 @@ const SectorSelector: React.FC<SectorSelectorProps> = ({
           <CommandInput placeholder="Cerca settore..." />
           <CommandEmpty>Nessun settore trovato.</CommandEmpty>
           <CommandGroup>
-            {sectors.length > 0 ? (
+            {sectors && sectors.length > 0 ? (
               sectors.map((sector) => (
                 <CommandItem
                   key={sector.ticker}
