@@ -28,10 +28,14 @@ const SectorSelector: React.FC<SectorSelectorProps> = ({
 }) => {
   const [open, setOpen] = React.useState(false);
   
-  const selectedSectorData = sectorData.find(sector => sector.ticker === selectedSector);
-  
-  // Safe guard in case sectorData is empty
+  // Make sure we have valid sector data
   const sectors = Array.isArray(sectorData) ? sectorData : [];
+  
+  // Ensure we have a valid selected sector
+  const selectedSectorData = sectors.find(sector => sector.ticker === selectedSector);
+  const displayText = selectedSectorData 
+    ? `${selectedSectorData.name} (${selectedSectorData.ticker})` 
+    : "Seleziona settore...";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -42,7 +46,7 @@ const SectorSelector: React.FC<SectorSelectorProps> = ({
           aria-expanded={open}
           className="w-full justify-between"
         >
-          {selectedSectorData ? `${selectedSectorData.name} (${selectedSectorData.ticker})` : "Seleziona settore..."}
+          {displayText}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -51,28 +55,30 @@ const SectorSelector: React.FC<SectorSelectorProps> = ({
           <CommandInput placeholder="Cerca settore..." />
           <CommandEmpty>Nessun settore trovato.</CommandEmpty>
           <CommandGroup>
-            {sectors.length > 0 ? sectors.map((sector) => (
-              <CommandItem
-                key={sector.ticker}
-                value={sector.ticker}
-                onSelect={() => {
-                  onSectorChange(sector.ticker);
-                  setOpen(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedSector === sector.ticker ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <span>{sector.name}</span>
-                <span className="ml-2 text-xs text-muted-foreground">
-                  {sector.ticker}
-                </span>
-              </CommandItem>
-            )) : (
-              <CommandItem>Nessun settore disponibile</CommandItem>
+            {sectors.length > 0 ? (
+              sectors.map((sector) => (
+                <CommandItem
+                  key={sector.ticker}
+                  value={sector.ticker}
+                  onSelect={() => {
+                    onSectorChange(sector.ticker);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedSector === sector.ticker ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <span>{sector.name}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {sector.ticker}
+                  </span>
+                </CommandItem>
+              ))
+            ) : (
+              <CommandItem disabled>Nessun settore disponibile</CommandItem>
             )}
           </CommandGroup>
         </Command>

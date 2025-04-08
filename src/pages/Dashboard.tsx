@@ -9,13 +9,27 @@ import { sectorData } from '@/data/sectorData';
 import { cciHistoricalData, generateSectorData } from '@/data/sentimentData';
 
 const Dashboard = () => {
-  const [selectedSector, setSelectedSector] = useState('XLK');
+  // Ensure we have valid sector data
+  const validSectorData = Array.isArray(sectorData) && sectorData.length > 0 ? sectorData : [];
   
-  // Find the selected sector data
-  const sectorInfo = sectorData.find(s => s.ticker === selectedSector) || sectorData[0];
+  // Default to the first sector or a fallback if empty
+  const [selectedSector, setSelectedSector] = useState(
+    validSectorData.length > 0 ? validSectorData[0].ticker : 'XLK'
+  );
+  
+  // Find the selected sector data with a fallback
+  const defaultSector = { 
+    ticker: 'XLK', 
+    name: 'Technology', 
+    volatility: 0, 
+    sentimentCorrelation: 0,
+    color: '#3B82F6' 
+  };
+  
+  const sectorInfo = validSectorData.find(s => s.ticker === selectedSector) || defaultSector;
   
   // Generate correlation data for the selected sector
-  const sectorCorrelationData = generateSectorData(selectedSector, sectorInfo.sentimentCorrelation);
+  const sectorCorrelationData = generateSectorData(sectorInfo.ticker, sectorInfo.sentimentCorrelation);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -32,7 +46,7 @@ const Dashboard = () => {
       {/* Sector Cards */}
       <h2 className="text-xl font-semibold mb-4">Panoramica Settoriale</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {sectorData.map((sector) => (
+        {validSectorData.map((sector) => (
           <SectorCard
             key={sector.ticker}
             name={sector.name}
