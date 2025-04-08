@@ -1,34 +1,57 @@
 
 import { toast } from "sonner";
+import { sectorData } from "@/data/sectorData";
+
+// Mock data to use as fallback when API fails
+const MOCK_STOCK_DATA = {
+  XLK: { price: 187.45, changePercent: 0.75, volatility: 1.2 },
+  XLV: { price: 142.31, changePercent: -0.32, volatility: 0.8 },
+  XLF: { price: 39.87, changePercent: 1.05, volatility: 1.5 },
+  XLP: { price: 76.23, changePercent: 0.21, volatility: 0.5 },
+  XLE: { price: 92.68, changePercent: -1.25, volatility: 2.1 },
+  XLU: { price: 68.45, changePercent: 0.43, volatility: 0.7 }
+};
+
+// Mock historical data for fallback
+const generateMockHistoricalData = (baseTicker: string, months: number = 24) => {
+  const data = [];
+  const baseDate = new Date();
+  baseDate.setDate(1); // First day of current month
+  
+  // Generate data for the last X months
+  for (let i = 0; i < months; i++) {
+    const date = new Date(baseDate);
+    date.setMonth(baseDate.getMonth() - i);
+    
+    // Generate some random but somewhat realistic values
+    const randomFactor = Math.sin(i * 0.5) * 0.1 + 0.05;
+    const baseValue = baseTicker === 'SPY' ? 400 + (i * -2) : 100 + (i * -1);
+    const value = baseValue * (1 + randomFactor);
+    
+    data.unshift({
+      date: `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`,
+      value: parseFloat(value.toFixed(2))
+    });
+  }
+  
+  return data;
+};
 
 const RAPIDAPI_KEY = "e0c04b5ebcmshe468badcae64c5cp1112acjsn019d4b851b5d";
 const RAPIDAPI_HOST = "yh-finance.p.rapidapi.com";
-
-interface QuoteResponse {
-  symbol: string;
-  regularMarketPrice: number;
-  regularMarketChangePercent: number;
-  regularMarketVolume: number;
-  regularMarketDayHigh: number;
-  regularMarketDayLow: number;
-  fiftyDayAverage?: number;
-  twoHundredDayAverage?: number;
-}
 
 export interface StockData {
   symbol: string;
   price: number;
   changePercent: number;
-  volume: number;
-  dayHigh: number;
-  dayLow: number;
+  volume?: number;
+  dayHigh?: number;
+  dayLow?: number;
   volatility?: number;
 }
 
 /**
- * Fetches stock data for multiple symbols from Yahoo Finance API
- * @param symbols Array of stock symbols to fetch
- * @returns Promise with stock data
+ * Fetches stock data for multiple symbols from Yahoo Finance API with fallback
  */
 export const fetchStockData = async (symbols: string[]): Promise<Record<string, StockData>> => {
   try {
@@ -54,7 +77,7 @@ export const fetchStockData = async (symbols: string[]): Promise<Record<string, 
     
     const stockData: Record<string, StockData> = {};
     
-    data.quoteResponse.result.forEach((quote: QuoteResponse) => {
+    data.quoteResponse.result.forEach((quote: any) => {
       // Calculate approximate volatility using high-low range
       const dailyVolatility = quote.regularMarketDayHigh && quote.regularMarketDayLow ? 
         ((quote.regularMarketDayHigh - quote.regularMarketDayLow) / quote.regularMarketPrice * 100) : 
@@ -74,17 +97,28 @@ export const fetchStockData = async (symbols: string[]): Promise<Record<string, 
     return stockData;
   } catch (error) {
     console.error("Error fetching stock data:", error);
-    toast.error("Errore nel recupero dei dati finanziari");
-    return {};
+    
+    // Return mock data as fallback
+    const fallbackData: Record<string, StockData> = {};
+    symbols.forEach(symbol => {
+      const mockData = MOCK_STOCK_DATA[symbol as keyof typeof MOCK_STOCK_DATA] || 
+        { price: 100, changePercent: 0, volatility: 1 };
+      
+      fallbackData[symbol] = {
+        symbol,
+        price: mockData.price,
+        changePercent: mockData.changePercent,
+        volatility: mockData.volatility
+      };
+    });
+    
+    toast.error("Usando dati di fallback - API non disponibile");
+    return fallbackData;
   }
 };
 
 /**
- * Fetches historical data for a symbol
- * @param symbol Stock symbol to fetch history for
- * @param interval Data interval (1d, 1wk, 1mo)
- * @param range Time range (1mo, 3mo, 6mo, 1y, 2y, 5y)
- * @returns Promise with historical data
+ * Fetches historical data for a symbol with fallback
  */
 export const fetchHistoricalData = async (
   symbol: string, 
@@ -127,25 +161,26 @@ export const fetchHistoricalData = async (
     return historicalData;
   } catch (error) {
     console.error("Error fetching historical data:", error);
-    toast.error("Errore nel recupero dei dati storici");
-    return [];
+    
+    // Return mock data as fallback
+    toast.warning(`Usando dati di fallback per ${symbol}`);
+    return generateMockHistoricalData(symbol);
   }
 };
 
 /**
- * Fetch Consumer Confidence Index (CCI) from FRED API via RapidAPI
- * Note: This is a simplified mock as the actual CCI data might require a different API
- * @returns Promise with CCI data
+ * Fetch Consumer Confidence Index (CCI) with fallback
  */
 export const fetchConsumerConfidenceIndex = async (): Promise<{ date: string; cci: number }[]> => {
-  // Since Yahoo Finance doesn't provide CCI data directly, we'll use the mock data for now
-  // In a real app, you'd integrate with another data source like FRED API
-  
   try {
-    // Mock CCI with S&P 500 index as a proxy for sentiment
+    // Use S&P 500 index as a proxy for sentiment
     const spyData = await fetchHistoricalData("SPY", "1mo", "2y");
     
-    // Transform S&P data into CCI format with some normalization to mimic CCI range
+    if (!spyData.length) {
+      throw new Error("No historical data available");
+    }
+    
+    // Transform S&P data into CCI format with some normalization
     const cciData = spyData.map(item => {
       // Scale SPY value to typical CCI range (around 100 with variations)
       const cciValue = item.value ? 100 + ((item.value - 400) / 10) : 100;
@@ -159,9 +194,14 @@ export const fetchConsumerConfidenceIndex = async (): Promise<{ date: string; cc
     return cciData;
   } catch (error) {
     console.error("Error fetching CCI data:", error);
-    toast.error("Errore nel recupero dell'Indice di Fiducia dei Consumatori");
     
-    // Return empty array if there's an error
-    return [];
+    // Return mock CCI data as fallback
+    toast.warning("Usando dati di sentimento di fallback");
+    
+    const mockSPYData = generateMockHistoricalData("SPY");
+    return mockSPYData.map(item => ({
+      date: item.date,
+      cci: 100 + ((item.value - 400) / 10)
+    }));
   }
 };

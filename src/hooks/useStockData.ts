@@ -21,16 +21,11 @@ export function useStockData() {
     queryFn: () => fetchStockData(sectorTickers),
     enabled: sectorTickers.length > 0,
     staleTime: 60000, // 1 minute
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 1, // Only retry once to avoid hitting API limits
   });
 
-  // Notify if there's an error
-  useEffect(() => {
-    if (stockError) {
-      toast.error("Errore nel caricamento dei dati di mercato");
-    }
-  }, [stockError]);
-
+  // Notify if there's an error (toast is now handled in the API service)
   return {
     stockData: stockData || {},
     isStockLoading,
@@ -47,14 +42,9 @@ export function useConsumerConfidenceIndex() {
     queryKey: ['cciData'],
     queryFn: fetchConsumerConfidenceIndex,
     staleTime: 86400000, // 24 hours (CCI data doesn't change frequently)
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    retry: 1, // Only retry once
   });
-
-  useEffect(() => {
-    if (cciError) {
-      toast.error("Errore nel caricamento dell'Indice di Fiducia dei Consumatori");
-    }
-  }, [cciError]);
 
   return {
     cciData: cciData || [],
@@ -82,32 +72,76 @@ export function useSectorCorrelation(sectorTicker: string) {
         // Get CCI data
         const cciData = await fetchConsumerConfidenceIndex();
         
-        if (!cciData.length) {
-          throw new Error("No CCI data available");
-        }
-        
-        // Get sector historical data
+        // Get sector historical data (even if CCI failed, we'll try this anyway)
         const sectorData = await fetchHistoricalData(sectorTicker);
         
-        if (!sectorData.length) {
-          throw new Error(`No historical data for ${sectorTicker}`);
-        }
-        
-        // Combine the datasets
-        const combined = cciData.map(cci => {
-          // Find corresponding sector return for the same date
-          const sectorDataPoint = sectorData.find(sd => sd.date === cci.date);
+        // If we have any data from either source, try to combine them
+        if (cciData.length && sectorData.length) {
+          // Combine the datasets
+          const combined = cciData.map(cci => {
+            // Find corresponding sector return for the same date
+            const sectorDataPoint = sectorData.find(sd => sd.date === cci.date);
+            
+            return {
+              date: cci.date,
+              cci: cci.cci,
+              returns: sectorDataPoint?.value
+            };
+          }).filter(item => item.returns !== undefined);
           
-          return {
-            date: cci.date,
-            cci: cci.cci,
-            returns: sectorDataPoint?.value
-          };
-        }).filter(item => item.returns !== undefined);
-        
-        setCorrelationData(combined);
+          setCorrelationData(combined);
+        } else {
+          // If either dataset is empty, create synthetic data
+          const syntheticData = [];
+          const currentDate = new Date();
+          
+          // Generate 24 months of synthetic data
+          for (let i = 0; i < 24; i++) {
+            const date = new Date(currentDate);
+            date.setMonth(currentDate.getMonth() - i);
+            const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+            
+            // Create synthetic correlation where returns somewhat follow CCI
+            const cci = 100 + (Math.sin(i * 0.5) * 10);
+            const sectorMultiplier = sectorTicker === 'XLK' ? 1.2 : 
+                                    sectorTicker === 'XLF' ? 1.1 : 
+                                    sectorTicker === 'XLE' ? 0.9 : 1.0;
+            const returns = 100 + (Math.sin(i * 0.5 + 0.2) * 15 * sectorMultiplier);
+            
+            syntheticData.unshift({
+              date: dateStr,
+              cci: parseFloat(cci.toFixed(1)),
+              returns: parseFloat(returns.toFixed(1))
+            });
+          }
+          
+          setCorrelationData(syntheticData);
+          toast.warning(`Usando dati sintetici per ${sectorTicker}`);
+        }
       } catch (error) {
         console.error("Error in useSectorCorrelation:", error);
+        // Create synthetic data on error
+        const syntheticData = [];
+        const currentDate = new Date();
+        
+        // Generate 24 months of synthetic data
+        for (let i = 0; i < 24; i++) {
+          const date = new Date(currentDate);
+          date.setMonth(currentDate.getMonth() - i);
+          const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+          
+          // Create synthetic correlation
+          const cci = 100 + (Math.sin(i * 0.5) * 10);
+          const returns = 100 + (Math.sin(i * 0.5 + 0.2) * 15);
+          
+          syntheticData.unshift({
+            date: dateStr,
+            cci: parseFloat(cci.toFixed(1)),
+            returns: parseFloat(returns.toFixed(1))
+          });
+        }
+        
+        setCorrelationData(syntheticData);
         toast.error(`Errore nel calcolo della correlazione per ${sectorTicker}`);
         setHasError(true);
       } finally {

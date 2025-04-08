@@ -9,6 +9,8 @@ import SectorSelector from '@/components/SectorSelector';
 import { sectorData } from '@/data/sectorData';
 import { useStockData, useConsumerConfidenceIndex, useSectorCorrelation } from '@/hooks/useStockData';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
 // Define a type for sector data to avoid type errors
 interface SectorInfo {
@@ -67,8 +69,19 @@ const Dashboard = () => {
   // Notify when data is successfully loaded
   useEffect(() => {
     if (stockData && Object.keys(stockData).length > 0) {
-      toast.success("Dati di mercato aggiornati in tempo reale");
+      toast.success("Dati di mercato aggiornati");
     }
+  }, [stockData]);
+
+  // Display connection status
+  const [apiStatus, setApiStatus] = useState<'connecting' | 'success' | 'error'>('connecting');
+  
+  useEffect(() => {
+    // Check if we have real data or fallback data
+    const hasRealData = stockData && Object.keys(stockData).length > 0 && 
+                        stockData.XLK && stockData.XLK.price !== 187.45; // Check if not using fallback price
+    
+    setApiStatus(hasRealData ? 'success' : 'error');
   }, [stockData]);
 
   return (
@@ -81,6 +94,16 @@ const Dashboard = () => {
           specifici, sfidando la Teoria del Mercato Efficiente (EMH) attraverso l'analisi della correlazione tra 
           l'Indice di Fiducia dei Consumatori e i rendimenti settoriali.
         </p>
+        
+        {/* API Status */}
+        {apiStatus === 'error' && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Connessione API non disponibile. Utilizzando dati di fallback.
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       {/* Loading state */}
