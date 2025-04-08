@@ -29,6 +29,9 @@ const SectorSelector: React.FC<SectorSelectorProps> = ({
   const [open, setOpen] = React.useState(false);
   
   const selectedSectorData = sectorData.find(sector => sector.ticker === selectedSector);
+  
+  // Safe guard in case sectorData is empty
+  const sectors = Array.isArray(sectorData) ? sectorData : [];
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -48,7 +51,7 @@ const SectorSelector: React.FC<SectorSelectorProps> = ({
           <CommandInput placeholder="Cerca settore..." />
           <CommandEmpty>Nessun settore trovato.</CommandEmpty>
           <CommandGroup>
-            {sectorData.map((sector) => (
+            {sectors.length > 0 ? sectors.map((sector) => (
               <CommandItem
                 key={sector.ticker}
                 value={sector.ticker}
@@ -68,7 +71,9 @@ const SectorSelector: React.FC<SectorSelectorProps> = ({
                   {sector.ticker}
                 </span>
               </CommandItem>
-            ))}
+            )) : (
+              <CommandItem>Nessun settore disponibile</CommandItem>
+            )}
           </CommandGroup>
         </Command>
       </PopoverContent>
