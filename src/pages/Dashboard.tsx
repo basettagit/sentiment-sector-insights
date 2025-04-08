@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import SectorCard from '@/components/SectorCard';
@@ -9,9 +10,20 @@ import { sectorData } from '@/data/sectorData';
 import { useStockData, useConsumerConfidenceIndex, useSectorCorrelation } from '@/hooks/useStockData';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
+// Define a type for sector data to avoid type errors
+interface SectorInfo {
+  name: string;
+  ticker: string;
+  volatility: number;
+  sentimentCorrelation: number;
+  color: string;
+  price?: number;
+  changePercent?: number;
+}
+
 const Dashboard = () => {
   // Ensure we have valid sector data
-  const validSectorData = Array.isArray(sectorData) && sectorData.length > 0 ? sectorData : [];
+  const validSectorData: SectorInfo[] = Array.isArray(sectorData) && sectorData.length > 0 ? sectorData : [];
   
   // Default to the first sector or a fallback if empty
   const [selectedSector, setSelectedSector] = useState(
@@ -24,7 +36,7 @@ const Dashboard = () => {
   const { correlationData, isLoading: isCorrelationLoading } = useSectorCorrelation(selectedSector);
   
   // Find the selected sector data with a fallback
-  const defaultSector = { 
+  const defaultSector: SectorInfo = { 
     ticker: 'XLK', 
     name: 'Tecnologia', 
     volatility: 0, 
