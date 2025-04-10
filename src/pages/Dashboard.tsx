@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
   BarChart3, 
@@ -42,6 +43,7 @@ interface SectorInfo {
 }
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const validSectorData: SectorInfo[] = Array.isArray(sectorData) && sectorData.length > 0 ? sectorData : [];
   
   const [selectedSector, setSelectedSector] = useState(
@@ -96,13 +98,13 @@ const Dashboard = () => {
   const totalMarketValue = 234352.21;
   const marketChange = -1.43;
 
-  const sidebarIcons = [
-    { icon: Home, active: true },
-    { icon: BarChart3, active: false },
-    { icon: LineChart, active: false },
-    { icon: PieChart, active: false },
-    { icon: Wallet, active: false },
-    { icon: Settings, active: false },
+  const sidebarItems = [
+    { icon: Home, active: true, path: '/' },
+    { icon: BarChart3, active: false, path: '/analytics' },
+    { icon: LineChart, active: false, path: '/analytics' },
+    { icon: PieChart, active: false, path: '/analytics' },
+    { icon: Wallet, active: false, path: '/portfolio' },
+    { icon: Settings, active: false, path: '/settings' },
   ];
 
   return (
@@ -116,9 +118,10 @@ const Dashboard = () => {
         </div>
         
         <div className="flex flex-col items-center space-y-8">
-          {sidebarIcons.map((item, index) => (
+          {sidebarItems.map((item, index) => (
             <button 
               key={index} 
+              onClick={() => navigate(item.path)}
               className={`p-3 rounded-xl transition-all ${
                 item.active 
                 ? 'bg-gradient-to-r from-teal-900/50 to-lime-900/50 text-teal-300 shadow-lg shadow-teal-900/20' 

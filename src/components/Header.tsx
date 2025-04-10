@@ -23,7 +23,7 @@ const Header = () => {
           <Button 
             variant={location.pathname === '/' ? "default" : "outline"} 
             onClick={() => navigate('/')}
-            className="flex items-center"
+            className="flex items-center text-white"
             size="sm"
           >
             <LineChart className="h-4 w-4 mr-2" />
@@ -32,7 +32,7 @@ const Header = () => {
           <Button 
             variant={location.pathname === '/methodology' ? "default" : "outline"}
             onClick={() => navigate('/methodology')}
-            className="flex items-center"
+            className="flex items-center text-white"
             size="sm"
           >
             <BarChart3 className="h-4 w-4 mr-2" />
