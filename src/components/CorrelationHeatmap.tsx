@@ -7,7 +7,7 @@ interface CorrelationHeatmapProps {
   darkMode?: boolean;
 }
 
-const CorrelationHeatmap: React.FC<CorrelationHeatmapProps> = ({ darkMode = false }) => {
+const CorrelationHeatmap: React.FC<CorrelationHeatmapProps> = ({ darkMode = true }) => {
   // For a first version, let's create a simplified correlation matrix
   const correlationMatrix = [
     { sector: 'XLK', value: 0.68 },
@@ -28,7 +28,7 @@ const CorrelationHeatmap: React.FC<CorrelationHeatmapProps> = ({ darkMode = fals
 
   return (
     <div className="h-full">
-      <h3 className="text-lg font-medium mb-4">Correlazione Sentimento-Rendimenti</h3>
+      <h3 className="text-lg font-medium mb-4 text-white">Correlazione Sentimento-Rendimenti</h3>
       <div className="grid grid-cols-3 gap-2">
         {correlationMatrix.map((item) => {
           const sector = sectorData.find(s => s.ticker === item.sector);
@@ -41,8 +41,8 @@ const CorrelationHeatmap: React.FC<CorrelationHeatmapProps> = ({ darkMode = fals
               )}
             >
               <div className="text-2xl font-bold">{item.value.toFixed(2)}</div>
-              <div className="text-sm mt-1">{sector?.name}</div>
-              <div className="text-xs font-semibold mt-1">{item.sector}</div>
+              <div className="text-sm mt-1 text-white">{sector?.name}</div>
+              <div className="text-xs font-semibold mt-1 text-white/80">{item.sector}</div>
             </div>
           );
         })}
