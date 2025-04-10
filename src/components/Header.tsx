@@ -23,20 +23,20 @@ const Header = () => {
           <Button 
             variant={location.pathname === '/' ? "default" : "outline"} 
             onClick={() => navigate('/')}
-            className="flex items-center text-white"
+            className="flex items-center"
             size="sm"
           >
             <LineChart className="h-4 w-4 mr-2" />
-            Dashboard
+            <span className="text-white">Dashboard</span>
           </Button>
           <Button 
             variant={location.pathname === '/methodology' ? "default" : "outline"}
             onClick={() => navigate('/methodology')}
-            className="flex items-center text-white"
+            className="flex items-center"
             size="sm"
           >
             <BarChart3 className="h-4 w-4 mr-2" />
-            Metodologia
+            <span className="text-white">Metodologia</span>
           </Button>
         </nav>
       </div>
