@@ -1,6 +1,5 @@
-
 import { useQuery } from '@tanstack/react-query';
-import { fetchStockData, fetchHistoricalData, fetchConsumerConfidenceIndex, StockData } from '../services/yahooFinanceAPI';
+import { fetchStockData, fetchHistoricalData, fetchConsumerConfidenceIndex, StockData } from '../services/alphaVantageAPI';
 import { sectorData } from '@/data/sectorData';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';

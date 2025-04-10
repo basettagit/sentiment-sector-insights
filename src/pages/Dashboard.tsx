@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import SectorCard from '@/components/SectorCard';
@@ -10,9 +9,8 @@ import { sectorData } from '@/data/sectorData';
 import { useStockData, useConsumerConfidenceIndex, useSectorCorrelation } from '@/hooks/useStockData';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 
-// Define a type for sector data to avoid type errors
 interface SectorInfo {
   name: string;
   ticker: string;
@@ -24,20 +22,16 @@ interface SectorInfo {
 }
 
 const Dashboard = () => {
-  // Ensure we have valid sector data
   const validSectorData: SectorInfo[] = Array.isArray(sectorData) && sectorData.length > 0 ? sectorData : [];
   
-  // Default to the first sector or a fallback if empty
   const [selectedSector, setSelectedSector] = useState(
     validSectorData.length > 0 ? validSectorData[0].ticker : 'XLK'
   );
   
-  // Fetch real data from APIs
   const { stockData, isStockLoading } = useStockData();
   const { cciData, isCCILoading } = useConsumerConfidenceIndex();
   const { correlationData, isLoading: isCorrelationLoading } = useSectorCorrelation(selectedSector);
   
-  // Find the selected sector data with a fallback
   const defaultSector: SectorInfo = { 
     ticker: 'XLK', 
     name: 'Tecnologia', 
@@ -48,16 +42,13 @@ const Dashboard = () => {
   
   const sectorInfo = validSectorData.find(s => s.ticker === selectedSector) || defaultSector;
   
-  // Update sector cards with real-time data
   const enhancedSectorData = validSectorData.map(sector => {
     const liveData = stockData[sector.ticker];
     
     if (liveData) {
       return {
         ...sector,
-        // Use real volatility if available, otherwise keep the mock value
         volatility: liveData.volatility !== undefined ? liveData.volatility : sector.volatility,
-        // Add live price and change percentage
         price: liveData.price,
         changePercent: liveData.changePercent
       };
@@ -66,27 +57,23 @@ const Dashboard = () => {
     return sector;
   });
   
-  // Notify when data is successfully loaded
   useEffect(() => {
     if (stockData && Object.keys(stockData).length > 0) {
       toast.success("Dati di mercato aggiornati");
     }
   }, [stockData]);
 
-  // Display connection status
   const [apiStatus, setApiStatus] = useState<'connecting' | 'success' | 'error'>('connecting');
   
   useEffect(() => {
-    // Check if we have real data or fallback data
     const hasRealData = stockData && Object.keys(stockData).length > 0 && 
-                        stockData.XLK && stockData.XLK.price !== 187.45; // Check if not using fallback price
+                        stockData.XLK && stockData.XLK.price !== 187.45;
     
     setApiStatus(hasRealData ? 'success' : 'error');
   }, [stockData]);
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Dashboard Title and Description */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Dashboard di Analisi del Sentimento</h1>
         <p className="text-slate-600 max-w-3xl">
@@ -95,7 +82,22 @@ const Dashboard = () => {
           l'Indice di Fiducia dei Consumatori e i rendimenti settoriali.
         </p>
         
-        {/* API Status */}
+        {apiStatus === 'connecting' && (
+          <Alert className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Connessione ad Alpha Vantage API in corso...
+            </AlertDescription>
+          </Alert>
+        )}
+        {apiStatus === 'success' && (
+          <Alert variant="default" className="mt-4 bg-green-50 text-green-700 border-green-200">
+            <Check className="h-4 w-4" />
+            <AlertDescription>
+              Alpha Vantage API connessa correttamente.
+            </AlertDescription>
+          </Alert>
+        )}
         {apiStatus === 'error' && (
           <Alert variant="destructive" className="mt-4">
             <AlertCircle className="h-4 w-4" />
@@ -106,7 +108,6 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* Loading state */}
       {isStockLoading && (
         <div className="my-8 p-6 bg-slate-50 rounded-lg text-center">
           <LoadingSpinner size="large" className="mb-4" />
@@ -114,7 +115,6 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Sector Cards */}
       <h2 className="text-xl font-semibold mb-4">Panoramica Settoriale</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {enhancedSectorData.map((sector) => (
@@ -131,7 +131,6 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Charts Section */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Analisi Storica del Sentimento</h2>
         <div className="mb-4">
@@ -148,7 +147,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Sector Specific Analysis */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Analisi Specifica per Settore</h2>
         <div className="mb-4">
@@ -174,7 +172,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Correlation Heatmap */}
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Mappa di Correlazione</h2>
         <CorrelationHeatmap />
