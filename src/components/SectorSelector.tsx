@@ -1,89 +1,51 @@
 
 import React from 'react';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { sectorData } from '@/data/sectorData';
+import { Button } from '@/components/ui/button';
 
 interface SectorSelectorProps {
   selectedSector: string;
-  onSectorChange: (value: string) => void;
+  onSectorChange: (ticker: string) => void;
+  darkMode?: boolean;
 }
 
 const SectorSelector: React.FC<SectorSelectorProps> = ({ 
   selectedSector, 
-  onSectorChange 
+  onSectorChange,
+  darkMode = false
 }) => {
-  const [open, setOpen] = React.useState(false);
-  
-  // Make sure we have valid sector data and it's never undefined
   const sectors = Array.isArray(sectorData) ? sectorData : [];
   
-  // Ensure we have a valid selected sector
-  const selectedSectorData = sectors.find(sector => sector.ticker === selectedSector);
-  const displayText = selectedSectorData 
-    ? `${selectedSectorData.name} (${selectedSectorData.ticker})` 
-    : "Seleziona settore...";
-
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <div className="flex flex-wrap gap-2">
+      {sectors && sectors.length > 0 ? sectors.map((sector) => (
         <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between"
+          key={sector.ticker}
+          onClick={() => onSectorChange(sector.ticker)}
+          variant={selectedSector === sector.ticker ? "default" : "outline"}
+          className={`
+            text-xs px-3 py-1 h-auto
+            ${selectedSector === sector.ticker 
+              ? (darkMode 
+                ? 'bg-gradient-to-r from-teal-600 to-lime-600 text-white border-0' 
+                : '') 
+              : (darkMode 
+                ? 'bg-gray-900 border-gray-800 text-gray-400 hover:bg-gray-800' 
+                : '')
+            }
+          `}
+          style={
+            selectedSector === sector.ticker && darkMode 
+              ? { boxShadow: '0 2px 12px rgba(16, 185, 129, 0.2)' } 
+              : {}
+          }
         >
-          {displayText}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          {sector.ticker}
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput placeholder="Cerca settore..." />
-          <CommandEmpty>Nessun settore trovato.</CommandEmpty>
-          <CommandGroup>
-            {sectors && sectors.length > 0 ? (
-              sectors.map((sector) => (
-                <CommandItem
-                  key={sector.ticker}
-                  value={sector.ticker}
-                  onSelect={() => {
-                    onSectorChange(sector.ticker);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedSector === sector.ticker ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <span>{sector.name}</span>
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {sector.ticker}
-                  </span>
-                </CommandItem>
-              ))
-            ) : (
-              <CommandItem disabled>Nessun settore disponibile</CommandItem>
-            )}
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
+      )) : (
+        <div className="text-sm text-gray-500">Nessun settore disponibile</div>
+      )}
+    </div>
   );
 };
 
